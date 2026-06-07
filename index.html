@@ -122,11 +122,6 @@
     .card::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
 
     /* Fields */
-    .row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 20px;
-    }
 
     .field { margin-bottom: 22px; }
 
@@ -313,18 +308,12 @@
   </div>
 
   <div class="card">
-    <div class="row">
-      <div class="field">
-        <label>Phone IP Address</label>
-        <input id="ip" type="text" inputmode="url"
-               placeholder="192.168.43.1"
-               autocomplete="off" autocorrect="off"
-               autocapitalize="off" spellcheck="false">
-      </div>
-      <div class="field">
-        <label>Port</label>
-        <input id="port" type="number" value="6080" min="1" max="65535">
-      </div>
+    <div class="field">
+      <label>Phone IP Address</label>
+      <input id="ip" type="text" inputmode="url"
+             placeholder="192.168.43.1"
+             autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false">
     </div>
 
     <div class="field">
@@ -373,8 +362,7 @@ let hudTimer = null;
 /* ── Restore saved values ─────────────────────────── */
 try {
   const s = JSON.parse(localStorage.getItem('dexlink') || '{}');
-  if (s.ip)   document.getElementById('ip').value   = s.ip;
-  if (s.port) document.getElementById('port').value = s.port;
+  if (s.ip) document.getElementById('ip').value = s.ip;
 } catch {}
 
 /* ── Status helper ────────────────────────────────── */
@@ -394,13 +382,13 @@ vs.addEventListener('click', () => {
 
 /* ── Connect ──────────────────────────────────────── */
 btn.addEventListener('click', () => {
-  const ip   = document.getElementById('ip').value.trim()   || '192.168.43.1';
-  const port = document.getElementById('port').value.trim() || '6080';
+  const ip   = document.getElementById('ip').value.trim() || '192.168.43.1';
+  const port = '6080';
   const pass = document.getElementById('pass').value;
   const url  = `wss://${ip}:${port}`;
 
   // Persist
-  try { localStorage.setItem('dexlink', JSON.stringify({ ip, port })); } catch {}
+  try { localStorage.setItem('dexlink', JSON.stringify({ ip })); } catch {}
 
   // Update cert link
   certLink.href = `https://${ip}:${port}`;
@@ -475,7 +463,7 @@ fsBtn.addEventListener('click', () => {
 });
 
 /* ── Enter to connect ─────────────────────────────── */
-['ip', 'port', 'pass'].forEach(id => {
+['ip', 'pass'].forEach(id => {
   document.getElementById(id).addEventListener('keydown', e => {
     if (e.key === 'Enter') btn.click();
   });
