@@ -159,6 +159,36 @@
     .field input:focus { border-bottom-color: var(--accent); }
     .field input[readonly] { color: var(--text-mid); cursor: default; }
 
+    /* Select */
+    .select-wrap {
+      position: relative;
+    }
+    .select-wrap select {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border-mid);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      font-weight: 300;
+      padding: 5px 24px 9px 0;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+    .select-wrap select:focus { border-bottom-color: var(--accent); }
+    .select-arrow {
+      position: absolute;
+      right: 4px; top: 50%;
+      transform: translateY(-60%) rotate(90deg);
+      color: var(--text-mid);
+      font-size: 18px;
+      pointer-events: none;
+      line-height: 1;
+    }
+
     /* Remove number input spinners */
     .field input[type=number]::-webkit-inner-spin-button,
     .field input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
@@ -316,13 +346,26 @@
   <div class="card">
     <div class="row">
       <div class="field">
-        <label>Phone IP Address</label>
-        <input id="ip" type="text" value="192.168.43.1" readonly>
+        <label>Connection</label>
+        <div class="select-wrap">
+          <select id="profile">
+            <option value="tesla">Tesla</option>
+            <option value="samsung">Samsung</option>
+          </select>
+          <span class="select-arrow">&#8250;</span>
+        </div>
       </div>
       <div class="field">
         <label>Port</label>
         <input id="port" type="text" value="6080" readonly>
       </div>
+    </div>
+
+    <div class="field">
+      <label>IP Address</label>
+      <input id="ip" type="text" inputmode="url"
+             autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false">
     </div>
 
     <div class="field">
@@ -357,23 +400,49 @@
 import RFB from 'https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js';
 
 /* ── Element refs ─────────────────────────────────── */
-const cs      = document.getElementById('connect-screen');
-const vs      = document.getElementById('vnc-screen');
-const btn     = document.getElementById('connect-btn');
+const cs       = document.getElementById('connect-screen');
+const vs       = document.getElementById('vnc-screen');
+const btn      = document.getElementById('connect-btn');
 const statusEl = document.getElementById('status');
 const certHint = document.getElementById('cert-hint');
 const certLink = document.getElementById('cert-link');
-const hud     = document.getElementById('hud');
+const hud      = document.getElementById('hud');
+const profile  = document.getElementById('profile');
+const ipInput  = document.getElementById('ip');
 
 let rfb      = null;
 let hudTimer = null;
 
+const TESLA_IP = '192.168.43.1';
+
 /* ── Restore saved values ─────────────────────────── */
+let savedSamsungIp = '';
 try {
-  const s = JSON.parse(localStorage.getItem('dexlink') || '{}');
-  if (s.ip)   document.getElementById('ip').value   = s.ip;
-  if (s.port) document.getElementById('port').value = s.port;
+  const saved = JSON.parse(localStorage.getItem('dexlink') || '{}');
+  if (saved.samsungIp) savedSamsungIp = saved.samsungIp;
+  if (saved.profile)   profile.value  = saved.profile;
 } catch {}
+
+/* ── Fill IP box based on current profile ─────────── */
+function applyProfile() {
+  if (profile.value === 'tesla') {
+    ipInput.value    = TESLA_IP;
+    ipInput.readOnly = true;
+    ipInput.style.color = 'var(--text-mid)';
+  } else {
+    ipInput.value    = savedSamsungIp;
+    ipInput.readOnly = false;
+    ipInput.style.color = '';
+  }
+}
+applyProfile();
+
+profile.addEventListener('change', applyProfile);
+
+/* ── Save Samsung IP as user types ───────────────── */
+ipInput.addEventListener('input', () => {
+  if (profile.value === 'samsung') savedSamsungIp = ipInput.value.trim();
+});
 
 /* ── Status helper ────────────────────────────────── */
 function setStatus(msg, cls = '') {
@@ -392,13 +461,18 @@ vs.addEventListener('click', () => {
 
 /* ── Connect ──────────────────────────────────────── */
 btn.addEventListener('click', () => {
-  const ip   = document.getElementById('ip').value.trim()   || '192.168.43.1';
+  const ip   = ipInput.value.trim() || TESLA_IP;
   const port = document.getElementById('port').value.trim() || '6080';
   const pass = document.getElementById('pass').value;
   const url  = `wss://${ip}:${port}`;
 
   // Persist
-  try { localStorage.setItem('dexlink', JSON.stringify({ ip, port })); } catch {}
+  try {
+    localStorage.setItem('dexlink', JSON.stringify({
+      profile: profile.value,
+      samsungIp: savedSamsungIp
+    }));
+  } catch {}
 
   // Update cert link
   certLink.href = `https://${ip}:${port}`;
@@ -473,10 +547,9 @@ fsBtn.addEventListener('click', () => {
 });
 
 /* ── Enter to connect ─────────────────────────────── */
-['ip', 'port', 'pass'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', e => {
-    if (e.key === 'Enter') btn.click();
-  });
+['ip', 'pass'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
 });
 </script>
 
