@@ -272,7 +272,7 @@
       }));
     } catch {}
 
-    window.location.href = `http://${ip}:5980/vnc.html?autoconnect=true&show_dot=true&host=${ip}&port=6080`;
+    window.location.href = `http://${ip}:5980/vnc.html?autoconnect=true&host=${ip}&port=5980&path=websockify`;
   });
 
   ipInput.addEventListener('keydown', e => {
